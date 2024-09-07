@@ -39,6 +39,22 @@ def getTopFace(body: adsk.fusion.BRepBody):
     horizontalFaces = [face for face in body.faces if isZNormal(face)]
     return max(horizontalFaces, key=lambda x: x.boundingBox.minPoint.z)
 
+def getBackFace(body: adsk.fusion.BRepBody):
+    verticalFaces = [face for face in body.faces if isYNormal(face)]
+    return min(verticalFaces, key=lambda x: x.boundingBox.minPoint.x)
+
+def getFrontFace(body: adsk.fusion.BRepBody):
+    verticalFaces = [face for face in body.faces if isYNormal(face)]
+    return max(verticalFaces, key=lambda x: x.boundingBox.minPoint.x)
+
+def getRightFace(body: adsk.fusion.BRepBody):
+    verticalFaces = [face for face in body.faces if isXNormal(face)]
+    return max(verticalFaces, key=lambda x: x.boundingBox.minPoint.y)
+
+def getLeftFace(body: adsk.fusion.BRepBody):
+    verticalFaces = [face for face in body.faces if isXNormal(face)]
+    return min(verticalFaces, key=lambda x: x.boundingBox.minPoint.y)
+
 def getTopHorizontalEdge(edges: adsk.fusion.BRepEdges):
     horizontalEdges = [edge for edge in edges if geometryUtils.isHorizontal(edge)]
     return max(horizontalEdges, key=lambda x: x.startVertex.geometry.z)
@@ -46,6 +62,7 @@ def getTopHorizontalEdge(edges: adsk.fusion.BRepEdges):
 def getBottomHorizontalEdge(edges: adsk.fusion.BRepEdges):
     horizontalEdges = [edge for edge in edges if geometryUtils.isHorizontal(edge)]
     return min(horizontalEdges, key=lambda x: x.startVertex.geometry.z)
+
 
 def getVerticalEdges(
     faces: adsk.fusion.BRepFaces,

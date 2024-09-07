@@ -204,9 +204,9 @@ def createSingleGridfinityBaseBody(
     # magnet cutouts
     if input.hasMagnetCutouts:
         magnetSocketBody = shapeUtils.simpleCylinder(
-            baseBottomPlane,
-            0,
-            -input.magnetCutoutsDepth,
+            baseBottomPlane, 
+            -.02 if input.encloseMagnetCutouts else 0,
+            -input.magnetCutoutsDepth - .02 if input.encloseMagnetCutouts else 0,
             input.magnetCutoutsDiameter / 2,
             cutoutCenterPoint,
             targetComponent,

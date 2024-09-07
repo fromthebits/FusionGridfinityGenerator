@@ -14,6 +14,7 @@ class InputState:
     hasMagnetSockets: bool
     magnetSocketSize: float
     magnetSocketDepth: float
+    magnetSocketEnclosure: bool
 
     hasScrewHoles: bool
     screwHoleSize: float

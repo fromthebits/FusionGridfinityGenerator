@@ -5,6 +5,7 @@ from .const import DIMENSION_MAGNET_CUTOUT_DEPTH, DIMENSION_MAGNET_CUTOUT_DIAMET
 class BaseGeneratorInput():
     def __init__(self):
         self.hasMagnetCutouts = False
+        self.encloseMagnetCutouts = False
         self.hasScrewHoles = False
         self.hasBottomChamfer = True
         self.screwHolesDiameter = DIMENSION_SCREW_HOLE_DIAMETER
@@ -99,3 +100,11 @@ class BaseGeneratorInput():
     @magnetCutoutsDepth.setter
     def magnetCutoutsDepth(self, value: float):
         self._magnetCutoutsDepth = value
+
+    @property
+    def encloseMagnetCutouts(self) -> bool:
+        return self._encloseMagnetCutouts
+
+    @encloseMagnetCutouts.setter
+    def encloseMagnetCutouts(self, value: bool):
+        self._encloseMagnetCutouts = value

@@ -55,6 +55,7 @@ class BinBodyGeneratorInput():
     def __init__(self):
         self.wallThickness = const.BIN_WALL_THICKNESS
         self.isSolid = False
+        self.hasLatticeSides = True
         self.hasLip = False
         self.hasLipNotches = False
         self.hasScoop = False
@@ -147,6 +148,14 @@ class BinBodyGeneratorInput():
     @isSolid.setter
     def isSolid(self, value: bool):
         self._isSolid = value
+
+    @property
+    def hasLatticeSides(self) -> bool:
+        return self._hasLatticeSides
+
+    @hasLatticeSides.setter
+    def hasLatticeSides(self, value: bool):
+        self._hasLatticeSides = value
 
     @property
     def hasLipNotches(self) -> bool:

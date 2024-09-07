@@ -69,6 +69,7 @@ BASEPLATE_TYPE_FULL = 'Full'
 BASEPLATE_TYPE_SKELETONIZED = 'Skeletonized'
 
 BASEPLATE_WITH_MAGNETS_INPUT = 'with_magnet_cutouts'
+BASEPLATE_MAGNET_ENCLOSURE_INPUT = 'magnet_enclosure'
 BASEPLATE_MAGNET_DIAMETER_INPUT = 'magnet_diameter'
 BASEPLATE_MAGNET_HEIGHT_INPUT = 'magnet_height'
 
@@ -101,7 +102,7 @@ INPUTS_VALID = True
 
 def getErrorMessage():
     stackTrace = traceback.format_exc()
-    return f"An unknonwn error occurred, please validate your inputs and try again:\n{stackTrace}"
+    return f"An unknown error occurred, please validate your inputs and try again:\n{stackTrace}"
 
 def showErrorInMessageBox():
     if ui:
@@ -223,6 +224,8 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
     uiState.registerCommandInput(magnetSocketDiameterInput)
     magnetSocketDepthInput = magnetCutoutGroup.children.addValueInput(BASEPLATE_MAGNET_HEIGHT_INPUT, 'Magnet cutout depth', defaultLengthUnits, adsk.core.ValueInput.createByReal(uiState.getState(BASEPLATE_MAGNET_HEIGHT_INPUT)))
     uiState.registerCommandInput(magnetSocketDepthInput)
+    magnetSocketEnclosureInput = magnetCutoutGroup.children.addBoolValueInput(BASEPLATE_MAGNET_ENCLOSURE_INPUT, 'Enclose magnets', True, '', uiState.getState(BASEPLATE_MAGNET_ENCLOSURE_INPUT))
+    uiState.registerCommandInput(magnetSocketEnclosureInput)
 
     screwHoleGroup = plateFeaturesGroup.children.addGroupCommandInput(SCREW_HOLE_GROUP, 'Screw holes')
     screwHoleGroup.isExpanded = uiState.getState(SCREW_HOLE_GROUP)
@@ -433,6 +436,7 @@ def generateBaseplate(args: adsk.core.CommandEventArgs):
         baseplateGeneratorInput.hasMagnetCutouts = inputsState.hasMagnetSockets
         baseplateGeneratorInput.magnetCutoutsDiameter = inputsState.magnetSocketSize
         baseplateGeneratorInput.magnetCutoutsDepth = inputsState.magnetSocketDepth
+        baseplateGeneratorInput.encloseMagnetCutouts = inputsState.magnetSocketEnclosure
         baseplateGeneratorInput.hasScrewHoles = inputsState.hasScrewHoles
         baseplateGeneratorInput.screwHolesDiameter = inputsState.screwHoleSize
         baseplateGeneratorInput.screwHeadCutoutDiameter = inputsState.screwHeadSize
@@ -485,7 +489,7 @@ def initUiState():
     uiState.initValue(BASEPLATE_TYPE_DROPDOWN, BASEPLATE_TYPE_LIGHT, adsk.core.DropDownCommandInput.classType())
 
     uiState.initValue(BASEPLATE_WITH_MAGNETS_INPUT, True, adsk.core.BoolValueCommandInput.classType())
-
+    uiState.initValue(BASEPLATE_MAGNET_ENCLOSURE_INPUT, True, adsk.core.BoolValueCommandInput.classType())
     uiState.initValue(BASEPLATE_MAGNET_DIAMETER_INPUT, const.DIMENSION_MAGNET_CUTOUT_DIAMETER, adsk.core.ValueCommandInput.classType())
     uiState.initValue(BASEPLATE_MAGNET_HEIGHT_INPUT, const.DIMENSION_MAGNET_CUTOUT_DEPTH, adsk.core.ValueCommandInput.classType())
     uiState.initValue(BASEPLATE_WITH_SCREWS_INPUT, True, adsk.core.BoolValueCommandInput.classType())
@@ -539,6 +543,7 @@ def getInputsState():
         uiState.getState(BASEPLATE_WITH_MAGNETS_INPUT),
         uiState.getState(BASEPLATE_MAGNET_DIAMETER_INPUT),
         uiState.getState(BASEPLATE_MAGNET_HEIGHT_INPUT),
+        uiState.getState(BASEPLATE_MAGNET_ENCLOSURE_INPUT),
         uiState.getState(BASEPLATE_WITH_SCREWS_INPUT),
         uiState.getState(BASEPLATE_SCREW_DIAMETER_INPUT),
         uiState.getState(BASEPLATE_SCREW_HEIGHT_INPUT),
@@ -550,5 +555,5 @@ def getInputsState():
         uiState.getState(BASEPLATE_EXTRA_THICKNESS_INPUT),
         uiState.getState(BASEPLATE_BIN_Z_CLEARANCE_INPUT),
         uiState.getState(BASEPLATE_HAS_CONNECTION_HOLE_INPUT),
-        uiState.getState(BASEPLATE_CONNECTION_HOLE_DIAMETER_INPUT),
+        uiState.getState(BASEPLATE_CONNECTION_HOLE_DIAMETER_INPUT)
     )

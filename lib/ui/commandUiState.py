@@ -64,7 +64,7 @@ class CommandUiState:
         elif isinstance(input, adsk.core.StringValueCommandInput):
             self.inputState[inputId] = SingleInputState(inputId, input.value, input.objectType)
         else:
-            futil.log(f'{self.commandName} Unknonwn input type: {input.id} [{input.objectType}]')
+            futil.log(f'{self.commandName} Unknown input type: {input.id} [{input.objectType}]')
 
     def forceUIRefresh(self):
         futil.log(f'{self.commandName} Forcing UI input state refresh')
@@ -103,7 +103,7 @@ class CommandUiState:
         elif isinstance(input, adsk.core.StringValueCommandInput):
             input.value = value
         else:
-            futil.log(f'{self.commandName} Unknonwn input type: {input.id} [{input.objectType}]')
+            futil.log(f'{self.commandName} Unknown input type: {input.id} [{input.objectType}]')
 
     def getState(self, inputId: str):
         return self.inputState[inputId].value

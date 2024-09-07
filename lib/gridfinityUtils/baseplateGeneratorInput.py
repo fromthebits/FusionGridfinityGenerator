@@ -5,6 +5,7 @@ from . import const
 class BaseplateGeneratorInput():
     def __init__(self):
         self.hasMagnetCutouts = False
+        self.encloseMagnetCutouts = False
         self.hasScrewHoles = False
         self.screwHolesDiameter = const.DIMENSION_SCREW_HOLE_DIAMETER
         self.screwHeadCutoutDiameter = const.DIMENSION_SCREW_HEAD_CUTOUT_DIAMETER
@@ -184,6 +185,14 @@ class BaseplateGeneratorInput():
     @hasMagnetCutouts.setter
     def hasMagnetCutouts(self, value: bool):
         self._hasMagnetCutouts = value
+
+    @property
+    def encloseMagnetCutouts(self) -> bool:
+        return self._encloseMagnetCutouts
+
+    @encloseMagnetCutouts.setter
+    def encloseMagnetCutouts(self, value: bool):
+        self._encloseMagnetCutouts = value
 
     @property
     def magnetCutoutsDiameter(self) -> float:

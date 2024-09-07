@@ -9,6 +9,7 @@ from ... import config
 from ...lib.gridfinityUtils import combineUtils
 from ...lib.gridfinityUtils import geometryUtils
 from ...lib.gridfinityUtils import faceUtils
+from ...lib.gridfinityUtils import binBodyLatticeGenerator
 from ...lib.gridfinityUtils import shellUtils
 from ...lib.gridfinityUtils import commonUtils
 from ...lib.gridfinityUtils import const
@@ -81,10 +82,12 @@ BIN_REAL_DIMENSIONS_TABLE_TOTAL_WIDTH = "total_real_width"
 BIN_REAL_DIMENSIONS_TABLE_TOTAL_LENGTH = "total_real_length"
 BIN_REAL_DIMENSIONS_TABLE_TOTAL_HEIGHT = "total_real_height"
 BIN_WALL_THICKNESS_INPUT_ID = 'bin_wall_thickness'
+BIN_WALL_LATTICE_INPUT_ID = 'bin_wall_lattice'
 BIN_GENERATE_BASE_INPUT_ID = 'bin_generate_base'
 BIN_GENERATE_BODY_INPUT_ID = 'bin_generate_body'
 BIN_SCREW_HOLES_INPUT_ID = 'bin_screw_holes'
 BIN_MAGNET_CUTOUTS_INPUT_ID = 'bin_magnet_cutouts'
+BIN_MAGNET_ENCLOSE_INPUT_ID = 'bin_magnet_enclose'
 BIN_MAGNET_CUTOUTS_TABS_INPUT_ID = 'bin_magnet_cutouts_tabs'
 BIN_SCREW_DIAMETER_INPUT = 'screw_diameter'
 BIN_MAGNET_DIAMETER_INPUT = 'magnet_diameter'
@@ -166,6 +169,7 @@ def initDefaultUiState():
     commandUIState.initValue(BIN_GENERATE_BODY_INPUT_ID, True, adsk.core.BoolValueCommandInput.classType())
     commandUIState.initValue(BIN_TYPE_DROPDOWN_ID, BIN_TYPE_HOLLOW, adsk.core.DropDownCommandInput.classType())
     commandUIState.initValue(BIN_WALL_THICKNESS_INPUT_ID, const.BIN_WALL_THICKNESS, adsk.core.ValueCommandInput.classType())
+    commandUIState.initValue(BIN_WALL_LATTICE_INPUT_ID, True, adsk.core.BoolValueCommandInput.classType())
     commandUIState.initValue(BIN_WITH_LIP_INPUT_ID, True, adsk.core.BoolValueCommandInput.classType())
     commandUIState.initValue(BIN_WITH_LIP_NOTCHES_INPUT_ID, False, adsk.core.BoolValueCommandInput.classType())
 
@@ -190,6 +194,7 @@ def initDefaultUiState():
     commandUIState.initValue(BIN_MAGNET_CUTOUTS_TABS_INPUT_ID, False, adsk.core.BoolValueCommandInput.classType())
     commandUIState.initValue(BIN_MAGNET_DIAMETER_INPUT, const.DIMENSION_MAGNET_CUTOUT_DIAMETER, adsk.core.ValueCommandInput.classType())
     commandUIState.initValue(BIN_MAGNET_HEIGHT_INPUT, const.DIMENSION_MAGNET_CUTOUT_DEPTH, adsk.core.ValueCommandInput.classType())
+    commandUIState.initValue(BIN_MAGNET_ENCLOSE_INPUT_ID, True, adsk.core.BoolValueCommandInput.classType())
 
     commandCompartmentsTableUIState = []
     recordedDefaults = configUtils.readJsonConfig(UI_INPUT_DEFAULTS_CONFIG_PATH)
@@ -436,6 +441,7 @@ def is_all_input_valid(inputs: adsk.core.CommandInputs):
     bin_wall_thickness: adsk.core.ValueCommandInput = inputs.itemById(BIN_WALL_THICKNESS_INPUT_ID)
     bin_screw_holes: adsk.core.BoolValueCommandInput = inputs.itemById(BIN_SCREW_HOLES_INPUT_ID)
     bin_magnet_cutouts: adsk.core.BoolValueCommandInput = inputs.itemById(BIN_MAGNET_CUTOUTS_INPUT_ID)
+    bin_magnet_enclose: adsk.core.BoolValueCommandInput = inputs.itemById(BIN_MAGNET_ENCLOSE_INPUT_ID)
     bin_generate_base: adsk.core.BoolValueCommandInput = inputs.itemById(BIN_GENERATE_BASE_INPUT_ID)
     bin_generate_body: adsk.core.BoolValueCommandInput = inputs.itemById(BIN_GENERATE_BODY_INPUT_ID)
     bin_screw_hole_diameter: adsk.core.ValueCommandInput = inputs.itemById(BIN_SCREW_DIAMETER_INPUT)
@@ -564,7 +570,11 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
     binWallThicknessInput.isMinimumInclusive = True
     binWallThicknessInput.maximumValue = 0.2
     binWallThicknessInput.isMaximumInclusive = True
-    commandUIState.registerCommandInput(binWallThicknessInput)
+    commandUIState.registerCommandInput(binWallThicknessInput)    
+    
+    binWallLatticeCheckboxInput = binFeaturesGroup.children.addBoolValueInput(BIN_WALL_LATTICE_INPUT_ID, 'Lattice Sides', True, '', commandUIState.getState(BIN_WALL_LATTICE_INPUT_ID))
+    commandUIState.registerCommandInput(binWallLatticeCheckboxInput)
+    
     generateLipCheckboxInput = binFeaturesGroup.children.addBoolValueInput(BIN_WITH_LIP_INPUT_ID, 'Generate lip for stackability', True, '', commandUIState.getState(BIN_WITH_LIP_INPUT_ID))
     commandUIState.registerCommandInput(generateLipCheckboxInput)
     hasLipNotches = binFeaturesGroup.children.addBoolValueInput(BIN_WITH_LIP_NOTCHES_INPUT_ID, 'Generate lip notches', True, '', commandUIState.getState(BIN_WITH_LIP_NOTCHES_INPUT_ID))
@@ -646,6 +656,8 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
     magnetHeightInput.minimumValue = 0.1
     magnetHeightInput.isMinimumInclusive = True
     commandUIState.registerCommandInput(magnetHeightInput)
+    binMagnetEncloseInput = baseFeaturesGroup.children.addBoolValueInput(BIN_MAGNET_ENCLOSE_INPUT_ID, 'Enclose magnets', True, '', commandUIState.getState(BIN_MAGNET_ENCLOSE_INPUT_ID))
+    commandUIState.registerCommandInput(binMagnetEncloseInput)
 
     userChangesGroup = inputs.addGroupCommandInput(USER_CHANGES_GROUP_ID, 'Changes')
     userChangesGroup.isExpanded = commandUIState.getState(USER_CHANGES_GROUP_ID)
@@ -801,11 +813,13 @@ def onChangeValidate():
     commandUIState.getInput(BIN_MAGNET_CUTOUTS_TABS_INPUT_ID).isEnabled = generateBase
     commandUIState.getInput(BIN_MAGNET_DIAMETER_INPUT).isEnabled = generateBase
     commandUIState.getInput(BIN_MAGNET_HEIGHT_INPUT).isEnabled = generateBase
+    commandUIState.getInput(BIN_MAGNET_ENCLOSE_INPUT_ID).isEnabled = generateBase
     commandUIState.getInput(BIN_SCREW_DIAMETER_INPUT).isEnabled = generateBase
 
     generateBody: bool = commandUIState.getState(BIN_GENERATE_BODY_INPUT_ID)
     binType: str = commandUIState.getState(BIN_TYPE_DROPDOWN_ID)
     commandUIState.getInput(BIN_WALL_THICKNESS_INPUT_ID).isEnabled = generateBody and not binType == BIN_TYPE_SOLID
+    commandUIState.getInput(BIN_WALL_LATTICE_INPUT_ID).isEnabled = generateBody and not binType == BIN_TYPE_SOLID
     commandUIState.getInput(BIN_WITH_LIP_INPUT_ID).isEnabled = generateBody
     commandUIState.getInput(BIN_WITH_LIP_NOTCHES_INPUT_ID).isEnabled = generateBody
     commandUIState.getInput(BIN_HAS_TAB_INPUT_ID).isEnabled = generateBody
@@ -853,10 +867,12 @@ def generateBin(args: adsk.core.CommandEventArgs):
     bin_length: adsk.core.ValueCommandInput = inputs.itemById(BIN_LENGTH_INPUT_ID)
     bin_height: adsk.core.ValueCommandInput = inputs.itemById(BIN_HEIGHT_INPUT_ID)
     bin_wall_thickness: adsk.core.ValueCommandInput = inputs.itemById(BIN_WALL_THICKNESS_INPUT_ID)
+    bin_wall_lattice: adsk.core.BoolValueCommandInput = inputs.itemById(BIN_WALL_LATTICE_INPUT_ID)
     bin_screw_holes: adsk.core.BoolValueCommandInput = inputs.itemById(BIN_SCREW_HOLES_INPUT_ID)
     bin_generate_base: adsk.core.BoolValueCommandInput = inputs.itemById(BIN_GENERATE_BASE_INPUT_ID)
     bin_generate_body: adsk.core.BoolValueCommandInput = inputs.itemById(BIN_GENERATE_BODY_INPUT_ID)
     bin_magnet_cutouts: adsk.core.BoolValueCommandInput = inputs.itemById(BIN_MAGNET_CUTOUTS_INPUT_ID)
+    bin_magnet_enclose: adsk.core.BoolValueCommandInput = inputs.itemById(BIN_MAGNET_ENCLOSE_INPUT_ID)
     bin_screw_hole_diameter: adsk.core.ValueCommandInput = inputs.itemById(BIN_SCREW_DIAMETER_INPUT)
     bin_magnet_cutouts_tabs: adsk.core.BoolValueCommandInput = inputs.itemById(BIN_MAGNET_CUTOUTS_TABS_INPUT_ID)
     bin_magnet_cutout_diameter: adsk.core.ValueCommandInput = inputs.itemById(BIN_MAGNET_DIAMETER_INPUT)
@@ -908,6 +924,7 @@ def generateBin(args: adsk.core.CommandEventArgs):
         baseGeneratorInput.hasScrewHoles = bin_screw_holes.value and not isShelled
         baseGeneratorInput.hasMagnetCutouts = bin_magnet_cutouts.value and not isShelled
         baseGeneratorInput.hasMagnetCutoutsTabs = bin_magnet_cutouts_tabs.value and not isShelled
+        baseGeneratorInput.encloseMagnetCutouts = bin_magnet_enclose.value
         baseGeneratorInput.screwHolesDiameter = bin_screw_hole_diameter.value
         baseGeneratorInput.magnetCutoutsDiameter = bin_magnet_cutout_diameter.value
         baseGeneratorInput.magnetCutoutsDepth = bin_magnet_cutout_depth.value
@@ -935,6 +952,7 @@ def generateBin(args: adsk.core.CommandEventArgs):
         binBodyInput.binCornerFilletRadius = const.BIN_CORNER_FILLET_RADIUS - xyClearance
         binBodyInput.isSolid = isSolid or isShelled
         binBodyInput.wallThickness = bin_wall_thickness.value
+        binBodyInput.wallLattice = bin_wall_lattice.value
         binBodyInput.hasScoop = has_scoop.value and isHollow
         binBodyInput.scoopMaxRadius = binScoopMaxRadius.value
         binBodyInput.hasTab = hasTabInput.value and isHollow
@@ -971,7 +989,7 @@ def generateBin(args: adsk.core.CommandEventArgs):
                 bin_length.value,
                 gridfinityBinComponent,
             )
-
+            
         # merge everything
         if bin_generate_body.value and bin_generate_base.value:
             toolBodies = commonUtils.objectCollectionFromList(baseBodies)

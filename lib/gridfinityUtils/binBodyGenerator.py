@@ -4,7 +4,7 @@ import math
 import copy
 
 from ...lib import fusion360utils as futil
-from . import const, combineUtils, faceUtils, commonUtils, sketchUtils, extrudeUtils, baseGenerator, edgeUtils, filletUtils, geometryUtils
+from . import binBodyLatticeGenerator, const, combineUtils, faceUtils, commonUtils, sketchUtils, extrudeUtils, baseGenerator, edgeUtils, filletUtils, geometryUtils
 from .binBodyCutoutGenerator import createGridfinityBinBodyCutout
 from .binBodyCutoutGeneratorInput import BinBodyCutoutGeneratorInput
 from .baseGeneratorInput import BaseGeneratorInput
@@ -46,7 +46,7 @@ def createGridfinityBinBody(
     binBody.name = 'Bin body'
 
     bodiesToMerge: list[adsk.fusion.BRepBody] = []
-    bodiesToSubtract: list[adsk.fusion.BRepBody] = []
+    bodiesToSubtract: list[adsk.fusion.BRepBody] = []      
 
     # round corners
     filletUtils.filletEdgesByLength(
@@ -55,7 +55,7 @@ def createGridfinityBinBody(
         binBodyTotalHeight,
         targetComponent,
     ).name = 'Bin body corner fillets'
-
+    
     if input.hasLip:
         lipOriginPoint = adsk.core.Point3D.create(
             0,
@@ -179,6 +179,12 @@ def createGridfinityBinBody(
                 targetComponent,
             )
             bodiesToSubtract.append(compartmentsTopClearance)
+            
+            
+    if input.hasLatticeSides:
+        # Create lattice pattern on vertical faces
+        binBodyLatticeGenerator.createLatticePattern(targetComponent, binBody)
+
 
     if len(bodiesToSubtract) > 0:
         combineUtils.cutBody(

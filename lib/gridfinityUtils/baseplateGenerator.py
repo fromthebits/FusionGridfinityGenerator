@@ -123,17 +123,27 @@ def createGridfinityBaseplate(input: BaseplateGeneratorInput, targetComponent: a
             connectionHoleXTool = createConnectionHoleTool(connectionHoleFaceX, input.connectionScrewHolesDiameter / 2, input.baseWidth / 2, targetComponent)
 
     holeCuttingBodies: list[adsk.fusion.BRepBody] = []
+    magnetBodies: list[adsk.fusion.BRepBody] = []
     
     if input.hasExtendedBottom and input.hasMagnetCutouts:
         magnetSocketBody = shapeUtils.simpleCylinder(
             faceUtils.getBottomFace(baseBody),
-            0,
+            .1 if input.encloseMagnetCutouts else 0,
             input.magnetCutoutsDepth,
             input.magnetCutoutsDiameter / 2,
             holeCenterPoint,
             targetComponent,
         )
-        holeCuttingBodies.append(magnetSocketBody)
+        patternSpacingX = input.baseWidth - const.DIMENSION_SCREW_HOLES_OFFSET * 2
+        patternSpacingY = input.baseLength - const.DIMENSION_SCREW_HOLES_OFFSET * 2
+        magnetPattern = patternUtils.recPattern(
+            commonUtils.objectCollectionFromList([magnetSocketBody]),
+            (targetComponent.xConstructionAxis, targetComponent.yConstructionAxis),
+            (patternSpacingX, patternSpacingY),
+            (2, 2),
+            targetComponent
+        )
+        magnetBodies = magnetBodies + list(magnetPattern.bodies)
     
     if input.hasExtendedBottom and input.hasScrewHoles:
         screwHoleBody = shapeUtils.simpleCylinder(
@@ -183,7 +193,7 @@ def createGridfinityBaseplate(input: BaseplateGeneratorInput, targetComponent: a
     
     # replicate base in rectangular pattern
     rectangularPatternFeatures: adsk.fusion.RectangularPatternFeatures = features.rectangularPatternFeatures
-    patternInputBodies = adsk.core.ObjectCollection.create()
+    patternInputBodies = adsk.core.ObjectCollection.createWithArray(magnetBodies)
     patternInputBodies.add(baseBody)
     patternInput = rectangularPatternFeatures.createInput(patternInputBodies,
         targetComponent.xConstructionAxis,

@@ -9,7 +9,6 @@ from ... import config
 from ...lib.gridfinityUtils import combineUtils
 from ...lib.gridfinityUtils import geometryUtils
 from ...lib.gridfinityUtils import faceUtils
-from ...lib.gridfinityUtils import binBodyLatticeGenerator
 from ...lib.gridfinityUtils import shellUtils
 from ...lib.gridfinityUtils import commonUtils
 from ...lib.gridfinityUtils import const
@@ -952,7 +951,7 @@ def generateBin(args: adsk.core.CommandEventArgs):
         binBodyInput.binCornerFilletRadius = const.BIN_CORNER_FILLET_RADIUS - xyClearance
         binBodyInput.isSolid = isSolid or isShelled
         binBodyInput.wallThickness = bin_wall_thickness.value
-        binBodyInput.wallLattice = bin_wall_lattice.value
+        binBodyInput.hasLatticeSides = bin_wall_lattice.value
         binBodyInput.hasScoop = has_scoop.value and isHollow
         binBodyInput.scoopMaxRadius = binScoopMaxRadius.value
         binBodyInput.hasTab = hasTabInput.value and isHollow
